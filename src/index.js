@@ -6,34 +6,34 @@ const app = express();
 app.use(express.json());
 const customers = [];
 
-/*
-* CPF: string
-* mame: string
-* id: uuid
-* statement: []
-*/
-app.get("/account",(request,response) => {
-    return response.status(201).send();
-});
-
-app.get("/statement",(request,response) => {
+function verifyIfExistAccountCPF(request,response,next) {
     const { cpf } = request.headers;
-
     const customer = customers.find(customer => customer.cpf === cpf);
 
     if (!customer) {
         return response.status(400).json({error: "Customer not found."});
-    }
+    }    
 
+    request.customer = customer;
+
+    return next();
+}
+
+app.get("/account",(request,response) => {    
+    return response.status(201).send();
+});
+
+//app.use(verifyIfExistAccountCPF);
+
+app.get("/statement", verifyIfExistAccountCPF , (request,response) => {
+    const {customer} = request;
+    
     return response.json(customer.statement);
-
-
 });
 
 
 app.post("/account",(request,response) => {
     const { cpf, name } = request.body;
-
     const customerAlreadyExists = customers.some((customer) => customer.cpf === cpf);
 
     if (customerAlreadyExists) {
